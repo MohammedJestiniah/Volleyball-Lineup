@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Volleyball Lineup Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #1a252f; color: #fff;
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw; height: 100dvh;
+            overflow: hidden; overscroll-behavior: none; touch-action: none;
+        }
+        
+        .header {
+            padding: 8px 12px; background: #2c3e50;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .controls { display: flex; gap: 8px; }
+        select, button { padding: 8px 12px; border: none; border-radius: 5px; font-size: 14px; font-weight: bold; }
+        select { background: #34495e; color: white; border: 1px solid #7f8c8d; }
+        
+        button { background-color: #27ae60; color: white; cursor: pointer; }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-magic { background-color: #8e44ad; }
+        .btn-debug { background-color: #7f8c8d; padding: 8px; }
+        .btn-share { background-color: #3498db; }
+        button:active { filter: brightness(1.2); transform: scale(0.98); }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard-container {
+            background: #000; border-bottom: 4px solid #333; padding: 10px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            flex-shrink: 0;
+        }
+
+        .scoreboard {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 600px; background: #111;
+            border: 2px solid #444; border-radius: 8px; padding: 10px 20px;
+        }
+
+        .team-score { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        
+        /* Solves Arabic screenshot bug by using pure static text with a click-to-edit prompt */
+        .team-label-text {
+            font-size: 14px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; padding-bottom: 2px; border-bottom: 1px dashed rgba(255,255,255,0.3);
+            text-align: center; min-width: 80px; white-space: nowrap;
+        }
+
+        .score-display {
+            min-width: 50px; background: #000; border: 2px solid #222; border-radius: 5px;
+            padding: 5px 10px; text-align: center; font-family: 'Orbitron', monospace;
+            font-size: 40px; line-height: 1; cursor: pointer; white-space: nowrap;
+        }
+
+        .blue-text .team-label-text { color: #3498db; }
+        .blue-text .score-display { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        
+        .orange-text .team-label-text { color: #e67e22; }
+        .orange-text .score-display { color: #e67e22; text-shadow: 0 0 10px rgba(230, 126, 34, 0.5); }
+
+        .center-board {
+            display: flex; flex-direction: column; align-items: center;
+            color: #555; font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 2px;
+        }
+        .center-board .colon { font-size: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); margin-bottom: 2px; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-area { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; width: 100%; }
+        
+        #export-area { 
+            display: flex; flex-direction: column; flex-grow: 1; min-height: 0; 
+            background-color: #1a252f; width: 100%; box-sizing: border-box;
+            padding-top: 10px; /* Safe padding to prevent cropping */
+        }
+
+        .court-wrapper { flex-grow: 1; padding: 8px; display: flex; flex-direction: row; gap: 4px; min-height: 0; }
+        
+        .half-court {
+            flex-grow: 1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr);
+            gap: 4px; padding: 4px; border-radius: 8px; min-height: 0;
+        }
+        
+        #side_A { background-color: #1a5276; } 
+        #side_B { background-color: #873600; }
+        
+        .net { width: 6px; height: auto; background-color: white; border-radius: 3px; margin: 0 4px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+
+        .zone {
+            background-color: rgba(255, 255, 255, 0.1); border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            position: relative; box-sizing: border-box;
+        }
+
+        /* --- BOTTOM BENCH --- */
+        .bench-container {
+            height: 120px; background: #34495e; padding: 8px; display: flex; flex-direction: row;
+            align-items: center; gap: 10px; border-top: 2px solid #2c3e50; box-sizing: border-box; flex-shrink: 0;
+        }
+        .bench-label { font-size: 14px; font-weight: bold; color: #95a5a6; text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg); flex-shrink: 0; }
+        
+        .bench-slots { 
+            display: grid; grid-template-rows: repeat(2, 1fr); grid-auto-flow: column; gap: 6px; 
+            overflow-x: auto; overflow-y: hidden; flex-grow: 1; height: 100%; padding-bottom: 2px;
+        }
+
+        .trash-zone { width: 60px; height: 100%; background: #c0392b; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+
+        /* --- PLAYER TOKENS --- */
+        .player {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: grab; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.4); text-align: center;
+            line-height: 1.1; z-index: 100; flex-shrink: 0; touch-action: none;
+            box-sizing: border-box; overflow: hidden; padding: 2px;
+            transition: background-color 0.2s, color 0.2s, border 0.2s;
+        }
+        .player-name { font-weight: bold; pointer-events: none; }
+
+        .bench-slots .player { 
+            position: relative; width: 90px; height: 100%; border-radius: 6px; 
+            background-color: #f1c40f; color: #2c3e50; border: 2px solid #fff;
+        }
+        .bench-slots .player .player-name { font-size: 14px; }
+
+        .zone .player { 
+            position: absolute; top: 2px; left: 2px; 
+            width: calc(100% - 4px); height: calc(100% - 4px); 
+            border-radius: 6px; margin: 0;
+        }
+        .zone .player .player-name { font-size: 18px; font-weight: 800; }
+
+        #side_A .zone .player { background-color: #3498db; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
+        #side_B .zone .player { background-color: #e67e22; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
+        
+        .player.dragging {
+            position: fixed !important; pointer-events: none; 
+            width: 90px !important; height: 45px !important; border-radius: 6px;
+            z-index: 1000; opacity: 0.95; box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+            background-color: #f1c40f !important; color: #2c3e50 !important; border: 2px solid #fff !important;
+        }
+        .player.dragging .player-name { font-size: 16px; }
+
+        /* --- MODALS --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8);
+            z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content {
+            background: #2c3e50; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-title { font-size: 18px; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 5px; }
+        
+        .form-group input[type="text"] { background: #1a252f; color: white; padding: 10px; border-radius: 5px; border: 1px solid #34495e; font-size: 16px; width: 100%; box-sizing: border-box;}
+        
+        /* Flex List Priority Zones */
+        .priority-zones-container { display: flex; flex-direction: column; gap: 10px; }
+        .tier-zone-wrapper { background: #1a252f; border-radius: 8px; padding: 10px; border: 1px solid #34495e; }
+        .tier-title { font-size: 12px; font-weight: bold; color: #bdc3c7; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .tier-slots-container {
+            display: flex; gap: 5px; width: 100%; justify-content: space-between;
+        }
+        
+        .rank-slot {
+            flex: 1; height: 45px; background: rgba(0,0,0,0.3); border: 2px dashed #7f8c8d; 
+            border-radius: 6px; display: flex; align-items: center; justify-content: center; 
+            position: relative; box-sizing: border-box;
+        }
+        
+        .rank-slot::after {
+            content: attr(data-rank); position: absolute; font-size: 20px; font-weight: bold; 
+            color: rgba(255,255,255,0.1); z-index: 0; pointer-events: none;
+        }
+
+        .pos-token {
+            width: 100%; height: 100%; background: #3498db; color: white; border-radius: 5px;
+            font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center;
+            cursor: grab; user-select: none; touch-action: none; border: 2px solid #2980b9; z-index: 10;
+            box-sizing: border-box;
+        }
+        
+        .pos-dragging {
+            position: fixed !important; pointer-events: none; width: 50px !important; height: 50px !important; 
+            z-index: 3000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); opacity: 0.9;
+        }
+
+        .modal-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
+        .modal-actions button { padding: 10px 20px; }
+        
+        .generate-list { display: flex; flex-direction: column; gap: 8px; }
+        .gen-item { display: flex; align-items: center; gap: 10px; background: #34495e; padding: 10px; border-radius: 5px; }
+        .gen-item input { transform: scale(1.5); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="controls">
+            <select id="weekSelector" onchange="loadWeek()" style="background:white; color:black; border:none;"></select>
+            <button class="btn-share" id="shareBtn" onclick="shareLineup()">📤 Share</button>
+            <button class="btn-danger" onclick="clearCourt()">Clear</button>
+            <button class="btn-debug" onclick="copyDebugData()" title="Copy Roster JSON">🐞</button>
+        </div>
+        <div class="controls">
+            <button class="btn-magic" onclick="handleAutoGenClick()">⚡ Auto-Gen</button>
+            <button onclick="openPlayerModal()">+ Player</button>
+        </div>
+    </div>
+
+    <div class="main-area">
+        
+        <div id="export-area">
+            <div class="scoreboard-container">
+                <div class="scoreboard">
+                    <div class="team-score blue-text">
+                        <div class="team-label-text" id="teamNameA" onclick="editTeamName('teamNameA')" dir="auto">HOME</div>
+                        <div class="score-display" id="scoreA" onclick="editScore('scoreA')">0</div>
+                    </div>
+                    <div class="center-board">
+                        <div id="currentDate" style="font-size: 10px; font-family: sans-serif; color: #bdc3c7; margin-bottom: 2px;"></div>
+                        <div class="colon">-</div>
+                        <div>SETS</div>
+                    </div>
+                    <div class="team-score orange-text">
+                        <div class="team-label-text" id="teamNameB" onclick="editTeamName('teamNameB')" dir="auto">GUEST</div>
+                        <div class="score-display" id="scoreB" onclick="editScore('scoreB')">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="court-wrapper">
+                <div class="half-court" id="side_A">
+                    <div class="zone dropzone" id="A_BL" data-role="SR"></div> <div class="zone dropzone" id="A_FL" data-role="LS"></div> <div class="zone dropzone" id="A_BM" data-role="MR"></div> <div class="zone dropzone" id="A_FM" data-role="S"></div>  <div class="zone dropzone" id="A_BR" data-role="SR"></div> <div class="zone dropzone" id="A_FR" data-role="RS"></div> </div>
+                
+                <div class="net"></div>
+                
+                <div class="half-court" id="side_B">
+                    <div class="zone dropzone" id="B_FL" data-role="RS"></div> <div class="zone dropzone" id="B_BL" data-role="SR"></div> <div class="zone dropzone" id="B_FM" data-role="S"></div>  <div class="zone dropzone" id="B_BM" data-role="MR"></div> <div class="zone dropzone" id="B_FR" data-role="LS"></div> <div class="zone dropzone" id="B_BR" data-role="SR"></div> </div>
+            </div>
+        </div>
+
+        <div class="bench-container">
+            <div class="bench-label">Bench</div>
+            <div class="bench-slots dropzone" id="bench"></div>
+            <div class="trash-zone dropzone" id="trash">🗑️</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="playerModal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle">Add Player</div>
+            <div class="form-group">
+                <input type="text" id="playerName" placeholder="Player Name" maxlength="12">
+                <div style="font-size: 11px; color: #f1c40f; text-align: center; margin-top: 5px;">
+                    <b>S:</b> Setter | <b>MR:</b> Mid Rec | <b>LS:</b> Left Spike | <b>RS:</b> Right Spike | <b>SR:</b> Side Rec
+                </div>
+            </div>
+            
+            <div class="priority-zones-container">
+                <div class="tier-zone-wrapper">
+                    <div class="tier-title" style="color: #2ecc71;">High Priority</div>
+                    <div class="tier-slots-container">
+                        <div class="rank-slot dropzone-pos" data-tier="3" data-rank="1"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="3" data-rank="2"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="3" data-rank="3"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="3" data-rank="4"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="3" data-rank="5"></div>
+                    </div>
+                </div>
+                <div class="tier-zone-wrapper">
+                    <div class="tier-title" style="color: #f1c40f;">Mid Priority</div>
+                    <div class="tier-slots-container">
+                        <div class="rank-slot dropzone-pos" data-tier="2" data-rank="1"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="2" data-rank="2"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="2" data-rank="3"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="2" data-rank="4"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="2" data-rank="5"></div>
+                    </div>
+                </div>
+                <div class="tier-zone-wrapper">
+                    <div class="tier-title" style="color: #e74c3c;">Low Priority</div>
+                    <div class="tier-slots-container">
+                        <div class="rank-slot dropzone-pos" data-tier="1" data-rank="1"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="1" data-rank="2"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="1" data-rank="3"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="1" data-rank="4"></div>
+                        <div class="rank-slot dropzone-pos" data-tier="1" data-rank="5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="token_storage" style="display:none;">
+                <div class="pos-token" data-pos="S" id="pos_S">S</div>
+                <div class="pos-token" data-pos="MR" id="pos_MR">MR</div>
+                <div class="pos-token" data-pos="LS" id="pos_LS">LS</div>
+                <div class="pos-token" data-pos="RS" id="pos_RS">RS</div>
+                <div class="pos-token" data-pos="SR" id="pos_SR">SR</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-danger" onclick="closeModals()">Cancel</button>
+                <button onclick="savePlayer()">Save Player</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="generateModal">
+        <div class="modal-content">
+            <div class="modal-title">Select 12 Players to Auto-Gen</div>
+            <div style="font-size: 12px; color: #bdc3c7;" id="selectCount">0 / 12 Selected</div>
+            <div class="generate-list" id="generateList"></div>
+            <div class="modal-actions">
+                <button class="btn-danger" onclick="closeModals()">Cancel</button>
+                <button class="btn-magic" onclick="runGeneratorFromModal()">Generate Lineup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_PLAYERS = 30;
+        const bench = document.getElementById('bench');
+        
+        let activePlayer = null;
+        let startX, startY; 
+        let editingPlayerId = null;
+
+        window.onload = function() {
+            // Set the Current Date above the Scoreboard
+            const dateOpts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('currentDate').innerText = new Date().toLocaleDateString(undefined, dateOpts);
+
+            const weekSelector = document.getElementById('weekSelector');
+            for(let i = 1; i <= 50; i++) {
+                let opt = document.createElement('option');
+                opt.value = 'week' + i; opt.innerText = 'Wk ' + i;
+                weekSelector.appendChild(opt);
+            }
+            loadWeek();
+            setupModalDrag();
+        };
+
+        function getGlobalRoster() { 
+            let roster = JSON.parse(localStorage.getItem('vball_roster_final')) || []; 
+            return roster;
+        }
+
+        function saveGlobalRoster(roster) { localStorage.setItem('vball_roster_final', JSON.stringify(roster)); }
+        
+        function saveWeekData() {
+            const week = document.getElementById('weekSelector').value;
+            let courtPositions = {};
+            document.querySelectorAll('.half-court .zone').forEach(zone => {
+                if (zone.children.length > 0) courtPositions[zone.id] = zone.children[0].id;
+            });
+            const data = {
+                positions: courtPositions,
+                scoreA: document.getElementById('scoreA').innerText || "0",
+                scoreB: document.getElementById('scoreB').innerText || "0",
+                teamNameA: document.getElementById('teamNameA').innerText || "HOME",
+                teamNameB: document.getElementById('teamNameB').innerText || "GUEST"
+            };
+            localStorage.setItem('vball_data_f_' + week, JSON.stringify(data));
+        }
+
+        function loadWeek() {
+            document.querySelectorAll('.dropzone').forEach(zone => zone.innerHTML = '');
+            document.getElementById('trash').innerHTML = '🗑️';
+
+            const week = document.getElementById('weekSelector').value;
+            const roster = getGlobalRoster();
+            const weekData = JSON.parse(localStorage.getItem('vball_data_f_' + week)) || { positions: {}, scoreA: "0", scoreB: "0", teamNameA: "HOME", teamNameB: "GUEST" };
+
+            document.getElementById('scoreA').innerText = weekData.scoreA;
+            document.getElementById('scoreB').innerText = weekData.scoreB;
+            document.getElementById('teamNameA').innerText = weekData.teamNameA;
+            document.getElementById('teamNameB').innerText = weekData.teamNameB;
+            
+            roster.forEach(p => {
+                let targetId = 'bench';
+                for (const [zoneId, playerId] of Object.entries(weekData.positions)) {
+                    if (playerId === p.id) { targetId = zoneId; break; }
+                }
+                createPlayerElement(p, targetId);
+            });
+        }
+
+        function clearCourt() {
+            if(confirm("Move all to bench?")) {
+                document.querySelectorAll('.zone .player').forEach(p => bench.appendChild(p));
+                saveWeekData();
+            }
+        }
+
+        function copyDebugData() {
+            const roster = getGlobalRoster();
+            const data = JSON.stringify(roster, null, 2);
+            const tempInput = document.createElement("textarea");
+            tempInput.value = data;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            alert("Roster JSON copied to clipboard!");
+        }
+
+        // --- TAP-TO-EDIT FOR SCOREBOARD (Protects Arabic Screenshots) ---
+        function editTeamName(elementId) {
+            const el = document.getElementById(elementId);
+            const newName = prompt("Enter Team Name:", el.innerText);
+            if (newName !== null && newName.trim() !== "") {
+                el.innerText = newName.substring(0, 15);
+                saveWeekData();
+            }
+        }
+
+        function editScore(elementId) {
+            const el = document.getElementById(elementId);
+            const newScore = prompt("Enter Sets Won (0-5):", el.innerText);
+            if (newScore !== null && !isNaN(newScore) && newScore.trim() !== "") {
+                el.innerText = parseInt(newScore);
+                saveWeekData();
+            }
+        }
+
+        // --- WHATSAPP SHARE FEATURE WITH CAMERA DELAY ---
+        async function shareLineup() {
+            const captureArea = document.getElementById('export-area');
+            const btn = document.getElementById('shareBtn');
+            const originalText = btn.innerText;
+            
+            try {
+                btn.innerText = "⏳ Wait...";
+                
+                // Force scroll to top so screenshot engine captures entire board
+                window.scrollTo(0,0); 
+                
+                // Delay 200ms to allow mobile browsers to finish UI scroll animations before taking picture
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                const canvas = await html2canvas(captureArea, {
+                    backgroundColor: '#1a252f',
+                    scale: 2, 
+                    logging: false,
+                    useCORS: true
+                });
+                
+                btn.innerText = originalText;
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], 'lineup.png', { type: 'image/png' });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ title: 'Volleyball Lineup', files: [file] });
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = 'lineup.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error("Screenshot error:", error);
+                alert("Could not generate image.");
+                btn.innerText = originalText;
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        function openPlayerModal(playerId = null) {
+            editingPlayerId = playerId;
+            const roster = getGlobalRoster();
+            
+            const storage = document.getElementById('token_storage');
+            ['S', 'MR', 'LS', 'RS', 'SR'].forEach(pos => {
+                const token = document.getElementById('pos_' + pos);
+                if(token) storage.appendChild(token);
+            });
+
+            if(playerId) {
+                document.getElementById('modalTitle').innerText = "Edit Player Priority";
+                const p = roster.find(player => player.id === playerId);
+                document.getElementById('playerName').value = p.name;
+                
+                let sortedPositions = Object.keys(p.stats).map(pos => {
+                    return { pos: pos, tier: p.stats[pos].tier, rank: p.stats[pos].rank };
+                });
+                
+                [3, 2, 1].forEach(tierLvl => {
+                    let tierList = sortedPositions.filter(s => s.tier === tierLvl).sort((a,b) => a.rank - b.rank);
+                    tierList.forEach(s => {
+                        document.getElementById('tier_' + tierLvl).appendChild(document.getElementById('pos_' + s.pos));
+                    });
+                });
+            } else {
+                document.getElementById('modalTitle').innerText = "Add Player";
+                document.getElementById('playerName').value = '';
+                
+                const defaultPos = ['S', 'MR', 'LS', 'RS', 'SR'];
+                defaultPos.forEach((pos, index) => {
+                    let targetSlot = document.querySelector(`.rank-slot[data-tier="2"][data-rank="${index+1}"]`);
+                    targetSlot.appendChild(document.getElementById('pos_' + pos));
+                });
+            }
+            
+            document.getElementById('playerModal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.getElementById('playerModal').style.display = 'none';
+            document.getElementById('generateModal').style.display = 'none';
+            editingPlayerId = null;
+        }
+
+        function savePlayer() {
+            let roster = getGlobalRoster();
+            if (!editingPlayerId && roster.length >= MAX_PLAYERS) { alert('Bench full!'); return; }
+            const name = document.getElementById('playerName').value.trim();
+            if (!name) return;
+
+            let newStats = {};
+            ['S', 'MR', 'LS', 'RS', 'SR'].forEach(pos => {
+                const token = document.getElementById('pos_' + pos);
+                const parentSlot = token.parentElement;
+                
+                if (parentSlot && parentSlot.classList.contains('rank-slot')) {
+                    newStats[pos] = {
+                        tier: parseInt(parentSlot.getAttribute('data-tier')),
+                        rank: parseInt(parentSlot.getAttribute('data-rank'))
+                    };
+                }
+            });
+
+            if (editingPlayerId) {
+                const pIndex = roster.findIndex(p => p.id === editingPlayerId);
+                roster[pIndex].name = name;
+                roster[pIndex].stats = newStats;
+                document.getElementById(editingPlayerId).querySelector('.player-name').innerText = name;
+            } else {
+                const newPlayer = { id: 'player_' + Date.now(), name: name, stats: newStats };
+                roster.push(newPlayer);
+                createPlayerElement(newPlayer, 'bench');
+            }
+            
+            saveGlobalRoster(roster);
+            closeModals();
+        }
+
+        function createPlayerElement(pData, locationId) {
+            const el = document.createElement('div');
+            el.className = 'player'; el.id = pData.id;
+            el.innerHTML = `<div class="player-name">${pData.name}</div>`;
+            el.addEventListener('touchstart', dragStart, {passive: false});
+            el.addEventListener('mousedown', dragStart);
+            let container = document.getElementById(locationId);
+            if (!container) container = bench;
+            container.appendChild(el);
+        }
+
+        // --- INSTANT AUTO GENERATOR ---
+        function handleAutoGenClick() {
+            const courtPlayers = document.querySelectorAll('.half-court .zone .player');
+            if (courtPlayers.length === 12) {
+                let selectedIds = Array.from(courtPlayers).map(p => p.id);
+                executeDraft(selectedIds);
+            } else {
+                openGenerateModal();
+            }
+        }
+
+        function openGenerateModal() {
+            const roster = getGlobalRoster();
+            if(roster.length < 12) { alert(`Need at least 12 players! (Currently ${roster.length})`); return; }
+            
+            let onCourtIds = [];
+            document.querySelectorAll('.half-court .zone .player').forEach(p => onCourtIds.push(p.id));
+
+            const list = document.getElementById('generateList');
+            list.innerHTML = '';
+            
+            roster.forEach(p => {
+                let isChecked = onCourtIds.includes(p.id) ? 'checked' : '';
+                let div = document.createElement('div');
+                div.className = 'gen-item';
+                div.innerHTML = `<input type="checkbox" value="${p.id}" onchange="updateSelectCount()" ${isChecked}> <span>${p.name}</span>`;
+                list.appendChild(div);
+            });
+            
+            updateSelectCount();
+            document.getElementById('generateModal').style.display = 'flex';
+        }
+
+        function updateSelectCount() {
+            const checked = document.querySelectorAll('.gen-item input:checked').length;
+            document.getElementById('selectCount').innerText = `${checked} / 12 Selected`;
+        }
+
+        function runGeneratorFromModal() {
+            const checkedBoxes = document.querySelectorAll('.gen-item input:checked');
+            if(checkedBoxes.length !== 12) { alert("You must select exactly 12 players!"); return; }
+            let selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+            executeDraft(selectedIds);
+            closeModals();
+        }
+
+        function executeDraft(selectedIds) {
+            const roster = getGlobalRoster();
+            let pool = roster.filter(p => selectedIds.includes(p.id));
+
+            document.querySelectorAll('.zone .player').forEach(p => bench.appendChild(p));
+
+            pool.forEach(p => {
+                p.totalPower = Object.values(p.stats).reduce((sum, stat) => sum + stat.tier, 0);
+                p.tierCounts = { 3: 0, 2: 0, 1: 0 };
+                for (let role in p.stats) p.tierCounts[p.stats[role].tier]++;
+            });
+
+            const draftOrder = [
+                { role: 'S',  zoneA: 'A_FM', zoneB: 'B_FM' },
+                { role: 'MR', zoneA: 'A_BM', zoneB: 'B_BM' },
+                { role: 'LS', zoneA: 'A_FL', zoneB: 'B_FR' }, 
+                { role: 'RS', zoneA: 'A_FR', zoneB: 'B_FL' }, 
+                { role: 'SR', zoneA: 'A_BL', zoneB: 'B_BL' },
+                { role: 'SR', zoneA: 'A_BR', zoneB: 'B_BR' }
+            ];
+
+            draftOrder.forEach(draft => {
+                let pick1Zone = Math.random() > 0.5 ? draft.zoneA : draft.zoneB;
+                let pick2Zone = pick1Zone === draft.zoneA ? draft.zoneB : draft.zoneA;
+
+                pool.sort((a, b) => sortPlayers(a, b, draft.role));
+                let pick1Player = pool.shift();
+                document.getElementById(pick1Zone).appendChild(document.getElementById(pick1Player.id));
+
+                pool.sort((a, b) => sortPlayers(a, b, draft.role));
+                let pick2Player = pool.shift();
+                document.getElementById(pick2Zone).appendChild(document.getElementById(pick2Player.id));
+            });
+
+            saveWeekData();
+        }
+
+        function sortPlayers(a, b, role) {
+            let aStat = a.stats[role];
+            let bStat = b.stats[role];
+
+            if (aStat.tier !== bStat.tier) return bStat.tier - aStat.tier;
+            if (aStat.rank !== bStat.rank) return aStat.rank - bStat.rank;
+            if (a.totalPower !== b.totalPower) return a.totalPower - b.totalPower;
+            
+            let aCount = a.tierCounts[aStat.tier];
+            let bCount = b.tierCounts[bStat.tier];
+            if (aCount !== bCount) return aCount - bCount;
+
+            return Math.random() - 0.5;
+        }
+
+        // --- SMART-SWAPPING MAIN COURT DRAG & DROP ENGINE ---
+        
+        let originalZone = null;
+
+        function getEventCoords(e) {
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function dragStart(e) {
+            if(e.type === 'touchstart') e.preventDefault();
+            activePlayer = e.target.closest('.player');
+            originalZone = activePlayer.parentElement; 
+            
+            const coords = getEventCoords(e);
+            startX = coords.x;
+            startY = coords.y;
+
+            activePlayer.classList.add('dragging');
+            activePlayer.style.left = (coords.x - 45) + 'px';
+            activePlayer.style.top = (coords.y - 22.5) + 'px';
+
+            document.addEventListener('touchmove', drag, {passive: false});
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchend', dragEnd);
+            document.addEventListener('mouseup', dragEnd);
+        }
+
+        function drag(e) {
+            if (activePlayer) {
+                e.preventDefault();
+                const coords = getEventCoords(e);
+                activePlayer.style.left = (coords.x - 45) + 'px';
+                activePlayer.style.top = (coords.y - 22.5) + 'px'; 
+            }
+        }
+
+        function dragEnd(e) {
+            if (activePlayer) {
+                const coords = getEventCoords(e);
+                
+                if (Math.abs(coords.x - startX) < 10 && Math.abs(coords.y - startY) < 10) {
+                    let clickedId = activePlayer.id;
+                    activePlayer.classList.remove('dragging');
+                    activePlayer.style.left = ''; activePlayer.style.top = '';
+                    activePlayer = null;
+                    cleanupMainListeners();
+                    openPlayerModal(clickedId);
+                    return;
+                }
+                
+                activePlayer.style.display = 'none';
+                const elemBelow = document.elementFromPoint(coords.x, coords.y);
+                activePlayer.style.display = 'flex';
+                
+                const dropzone = elemBelow ? elemBelow.closest('.dropzone') : null;
+
+                activePlayer.classList.remove('dragging');
+                activePlayer.style.left = '';
+                activePlayer.style.top = '';
+
+                if (dropzone) {
+                    if (dropzone.id === 'trash') {
+                        if(confirm("Delete permanently?")) {
+                            let roster = getGlobalRoster();
+                            roster = roster.filter(p => p.id !== activePlayer.id);
+                            saveGlobalRoster(roster);
+                            activePlayer.remove();
+                        }
+                    } else {
+                        if (dropzone.classList.contains('zone') && dropzone.children.length > 0) {
+                            const existingPlayer = dropzone.children[0];
+                            originalZone.appendChild(existingPlayer); 
+                        }
+                        dropzone.appendChild(activePlayer);
+                    }
+                } else {
+                    originalZone.appendChild(activePlayer); 
+                }
+
+                activePlayer = null;
+                originalZone = null;
+                saveWeekData(); 
+                cleanupMainListeners();
+            }
+        }
+        
+        function cleanupMainListeners() {
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchend', dragEnd);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+
+        // --- SMART-SWAP MODAL DRAG & DROP ENGINE ---
+        
+        let activePosToken = null;
+        let posOriginalSlot = null; 
+        let posOffsetX, posOffsetY;
+
+        function setupModalDrag() {
+            const tokens = document.querySelectorAll('.pos-token');
+            tokens.forEach(t => {
+                t.addEventListener('touchstart', posDragStart, {passive: false});
+                t.addEventListener('mousedown', posDragStart);
+            });
+        }
+
+        function posDragStart(e) {
+            if(e.type === 'touchstart') e.preventDefault();
+            activePosToken = e.target.closest('.pos-token');
+            posOriginalSlot = activePosToken.parentElement;
+            
+            const coords = getEventCoords(e);
+            const rect = activePosToken.getBoundingClientRect();
+            
+            posOffsetX = rect.width / 2; 
+            posOffsetY = rect.height / 2;
+
+            activePosToken.classList.add('pos-dragging');
+            activePosToken.style.left = (coords.x - posOffsetX) + 'px';
+            activePosToken.style.top = (coords.y - posOffsetY) + 'px';
+
+            document.addEventListener('touchmove', posDrag, {passive: false});
+            document.addEventListener('mousemove', posDrag);
+            document.addEventListener('touchend', posDragEnd);
+            document.addEventListener('mouseup', posDragEnd);
+        }
+
+        function posDrag(e) {
+            if (activePosToken) {
+                e.preventDefault();
+                const coords = getEventCoords(e);
+                activePosToken.style.left = (coords.x - posOffsetX) + 'px';
+                activePosToken.style.top = (coords.y - posOffsetY) + 'px';
+            }
+        }
+
+        function posDragEnd(e) {
+            if (activePosToken) {
+                const coords = getEventCoords(e);
+                
+                activePosToken.style.display = 'none';
+                const elemBelow = document.elementFromPoint(coords.x, coords.y);
+                activePosToken.style.display = 'flex';
+                
+                const targetSlot = elemBelow ? elemBelow.closest('.dropzone-pos') : null;
+
+                activePosToken.classList.remove('pos-dragging');
+                activePosToken.style.left = '';
+                activePosToken.style.top = '';
+
+                if (targetSlot) {
+                    if (targetSlot.children.length > 0) {
+                        const existingToken = targetSlot.children[0];
+                        posOriginalSlot.appendChild(existingToken);
+                    }
+                    targetSlot.appendChild(activePosToken);
+                } else {
+                    posOriginalSlot.appendChild(activePosToken);
+                }
+
+                activePosToken = null;
+                posOriginalSlot = null;
+                
+                document.removeEventListener('touchmove', posDrag);
+                document.removeEventListener('mousemove', posDrag);
+                document.removeEventListener('touchend', posDragEnd);
+                document.removeEventListener('mouseup', posDragEnd);
+            }
+        }
+    </script>
+</body>
+</html>
