@@ -32,7 +32,7 @@
         button { background-color: #27ae60; color: white; cursor: pointer; }
         .btn-danger { background-color: #e74c3c; }
         .btn-magic { background-color: #8e44ad; }
-        .btn-debug { background-color: #7f8c8d; padding: 8px; }
+        .btn-debug { background-color: #7f8c8d; padding: 8px 12px; }
         .btn-share { background-color: #3498db; }
         button:active { filter: brightness(1.2); transform: scale(0.98); }
 
@@ -52,24 +52,26 @@
 
         .team-score { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         
-        /* Solves Arabic screenshot bug by using pure static text with a click-to-edit prompt */
-        .team-label-text {
+        .team-label-input {
             font-size: 14px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
-            cursor: pointer; padding-bottom: 2px; border-bottom: 1px dashed rgba(255,255,255,0.3);
-            text-align: center; min-width: 80px; white-space: nowrap;
+            background: transparent; border: none; color: inherit; text-align: center;
+            width: 100px; padding: 2px; font-family: inherit;
         }
+        .team-label-input:focus { outline: none; border-bottom: 1px solid rgba(255,255,255,0.3); }
 
-        .score-display {
-            min-width: 50px; background: #000; border: 2px solid #222; border-radius: 5px;
-            padding: 5px 10px; text-align: center; font-family: 'Orbitron', monospace;
-            font-size: 40px; line-height: 1; cursor: pointer; white-space: nowrap;
+        .score-input {
+            width: 60px; background: #000; border: 2px solid #222; border-radius: 5px;
+            padding: 5px; text-align: center; font-family: 'Orbitron', monospace;
+            font-size: 40px; line-height: 1; -moz-appearance: textfield;
         }
+        .score-input::-webkit-outer-spin-button, .score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .score-input:focus { outline: none; border-color: #555; }
 
-        .blue-text .team-label-text { color: #3498db; }
-        .blue-text .score-display { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .blue-text .team-label-input { color: #3498db; }
+        .blue-text .score-input { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
         
-        .orange-text .team-label-text { color: #e67e22; }
-        .orange-text .score-display { color: #e67e22; text-shadow: 0 0 10px rgba(230, 126, 34, 0.5); }
+        .orange-text .team-label-input { color: #e67e22; }
+        .orange-text .score-input { color: #e67e22; text-shadow: 0 0 10px rgba(230, 126, 34, 0.5); }
 
         .center-board {
             display: flex; flex-direction: column; align-items: center;
@@ -83,7 +85,7 @@
         #export-area { 
             display: flex; flex-direction: column; flex-grow: 1; min-height: 0; 
             background-color: #1a252f; width: 100%; box-sizing: border-box;
-            padding-top: 10px; /* Safe padding to prevent cropping */
+            padding-top: 5px;
         }
 
         .court-wrapper { flex-grow: 1; padding: 8px; display: flex; flex-direction: row; gap: 4px; min-height: 0; }
@@ -203,6 +205,12 @@
         .generate-list { display: flex; flex-direction: column; gap: 8px; }
         .gen-item { display: flex; align-items: center; gap: 10px; background: #34495e; padding: 10px; border-radius: 5px; }
         .gen-item input { transform: scale(1.5); }
+        
+        /* Import Textarea */
+        #importText {
+            width: 100%; background: #1a252f; color: white; border: 1px solid #34495e; 
+            border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -210,9 +218,10 @@
     <div class="header">
         <div class="controls">
             <select id="weekSelector" onchange="loadWeek()" style="background:white; color:black; border:none;"></select>
-            <button class="btn-share" id="shareBtn" onclick="shareLineup()">📤 Share</button>
+            <button class="btn-share" id="shareBtn" onclick="shareLineup()">📤</button>
             <button class="btn-danger" onclick="clearCourt()">Clear</button>
-            <button class="btn-debug" onclick="copyDebugData()" title="Copy Roster JSON">🐞</button>
+            <button class="btn-debug" onclick="copyDebugData()" title="Export JSON">🐞</button>
+            <button class="btn-debug" onclick="openImportModal()" title="Import JSON">📥</button>
         </div>
         <div class="controls">
             <button class="btn-magic" onclick="handleAutoGenClick()">⚡ Auto-Gen</button>
@@ -226,8 +235,8 @@
             <div class="scoreboard-container">
                 <div class="scoreboard">
                     <div class="team-score blue-text">
-                        <div class="team-label-text" id="teamNameA" onclick="editTeamName('teamNameA')" dir="auto">HOME</div>
-                        <div class="score-display" id="scoreA" onclick="editScore('scoreA')">0</div>
+                        <input type="text" class="team-label-input" id="teamNameA" value="HOME" dir="auto" oninput="saveWeekData()" maxlength="15">
+                        <input type="number" class="score-input" id="scoreA" value="0" min="0" max="5" oninput="saveWeekData()">
                     </div>
                     <div class="center-board">
                         <div id="currentDate" style="font-size: 10px; font-family: sans-serif; color: #bdc3c7; margin-bottom: 2px;"></div>
@@ -235,8 +244,8 @@
                         <div>SETS</div>
                     </div>
                     <div class="team-score orange-text">
-                        <div class="team-label-text" id="teamNameB" onclick="editTeamName('teamNameB')" dir="auto">GUEST</div>
-                        <div class="score-display" id="scoreB" onclick="editScore('scoreB')">0</div>
+                        <input type="text" class="team-label-input" id="teamNameB" value="GUEST" dir="auto" oninput="saveWeekData()" maxlength="15">
+                        <input type="number" class="score-input" id="scoreB" value="0" min="0" max="5" oninput="saveWeekData()">
                     </div>
                 </div>
             </div>
@@ -329,6 +338,18 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-content">
+            <div class="modal-title">Import JSON Roster</div>
+            <p style="font-size: 12px; color: #bdc3c7; margin: 0;">Paste your raw JSON text below. Warning: This will overwrite your current players.</p>
+            <textarea id="importText" rows="6" placeholder="Paste JSON here..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-danger" onclick="closeModals()">Cancel</button>
+                <button class="btn-magic" onclick="processImport()">Import Data</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const MAX_PLAYERS = 30;
         const bench = document.getElementById('bench');
@@ -341,6 +362,12 @@
             // Set the Current Date above the Scoreboard
             const dateOpts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
             document.getElementById('currentDate').innerText = new Date().toLocaleDateString(undefined, dateOpts);
+
+            document.querySelectorAll('.team-label-input, .score-input').forEach(el => {
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+                });
+            });
 
             const weekSelector = document.getElementById('weekSelector');
             for(let i = 1; i <= 50; i++) {
@@ -367,10 +394,10 @@
             });
             const data = {
                 positions: courtPositions,
-                scoreA: document.getElementById('scoreA').innerText || "0",
-                scoreB: document.getElementById('scoreB').innerText || "0",
-                teamNameA: document.getElementById('teamNameA').innerText || "HOME",
-                teamNameB: document.getElementById('teamNameB').innerText || "GUEST"
+                scoreA: document.getElementById('scoreA').value || "0",
+                scoreB: document.getElementById('scoreB').value || "0",
+                teamNameA: document.getElementById('teamNameA').value || "HOME",
+                teamNameB: document.getElementById('teamNameB').value || "GUEST"
             };
             localStorage.setItem('vball_data_f_' + week, JSON.stringify(data));
         }
@@ -383,10 +410,10 @@
             const roster = getGlobalRoster();
             const weekData = JSON.parse(localStorage.getItem('vball_data_f_' + week)) || { positions: {}, scoreA: "0", scoreB: "0", teamNameA: "HOME", teamNameB: "GUEST" };
 
-            document.getElementById('scoreA').innerText = weekData.scoreA;
-            document.getElementById('scoreB').innerText = weekData.scoreB;
-            document.getElementById('teamNameA').innerText = weekData.teamNameA;
-            document.getElementById('teamNameB').innerText = weekData.teamNameB;
+            document.getElementById('scoreA').value = weekData.scoreA;
+            document.getElementById('scoreB').value = weekData.scoreB;
+            document.getElementById('teamNameA').value = weekData.teamNameA;
+            document.getElementById('teamNameB').value = weekData.teamNameB;
             
             roster.forEach(p => {
                 let targetId = 'bench';
@@ -416,22 +443,30 @@
             alert("Roster JSON copied to clipboard!");
         }
 
-        // --- TAP-TO-EDIT FOR SCOREBOARD (Protects Arabic Screenshots) ---
-        function editTeamName(elementId) {
-            const el = document.getElementById(elementId);
-            const newName = prompt("Enter Team Name:", el.innerText);
-            if (newName !== null && newName.trim() !== "") {
-                el.innerText = newName.substring(0, 15);
-                saveWeekData();
-            }
+        // --- JSON IMPORT LOGIC ---
+        function openImportModal() {
+            document.getElementById('importText').value = '';
+            document.getElementById('importModal').style.display = 'flex';
         }
 
-        function editScore(elementId) {
-            const el = document.getElementById(elementId);
-            const newScore = prompt("Enter Sets Won (0-5):", el.innerText);
-            if (newScore !== null && !isNaN(newScore) && newScore.trim() !== "") {
-                el.innerText = parseInt(newScore);
-                saveWeekData();
+        function processImport() {
+            const input = document.getElementById('importText').value.trim();
+            if (!input) return;
+            try {
+                const parsedData = JSON.parse(input);
+                if (Array.isArray(parsedData)) {
+                    if (confirm("This will completely replace your current roster. Continue?")) {
+                        saveGlobalRoster(parsedData);
+                        loadWeek();
+                        closeModals();
+                        alert("Roster imported successfully!");
+                    }
+                } else {
+                    alert("Invalid format: Data must be a JSON array.");
+                }
+            } catch (e) {
+                alert("Error parsing JSON. Please ensure it is copied exactly.");
+                console.error(e);
             }
         }
 
@@ -442,7 +477,7 @@
             const originalText = btn.innerText;
             
             try {
-                btn.innerText = "⏳ Wait...";
+                btn.innerText = "⏳";
                 
                 // Force scroll to top so screenshot engine captures entire board
                 window.scrollTo(0,0); 
@@ -522,6 +557,7 @@
         function closeModals() {
             document.getElementById('playerModal').style.display = 'none';
             document.getElementById('generateModal').style.display = 'none';
+            document.getElementById('importModal').style.display = 'none';
             editingPlayerId = null;
         }
 
