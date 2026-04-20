@@ -17,7 +17,6 @@
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             width: 100vw; height: 100dvh;
             overflow: hidden; overscroll-behavior: none; 
-            /* Removed global touch-action: none to allow scoped scrolling */
         }
         
         .header {
@@ -38,7 +37,7 @@
         .btn-toggle { background-color: #f39c12; }
         button:active { filter: brightness(1.2); transform: scale(0.98); }
 
-        /* --- SCOREBOARD --- */
+        /* --- REDESIGNED ELO SCOREBOARD --- */
         .scoreboard-container {
             background: #000; border-bottom: 4px solid #333; padding: 10px;
             display: flex; justify-content: center; align-items: center;
@@ -47,40 +46,46 @@
         }
 
         .scoreboard {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-around; align-items: center;
             width: 100%; max-width: 800px; background: #111;
-            border: 2px solid #444; border-radius: 8px; padding: 10px 20px;
+            border: 2px solid #444; border-radius: 8px; padding: 10px; gap: 10px;
         }
 
-        .team-score { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        
+        .team-block {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            background: #1a1a1a; border-radius: 8px; padding: 8px; flex: 1;
+            border: 1px solid #333; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
         .team-label-text {
             font-size: 16px; font-weight: 900;
             cursor: pointer; padding-bottom: 2px; border-bottom: 1px dashed rgba(255,255,255,0.3);
             text-align: center; min-width: 80px; white-space: nowrap;
         }
 
+        .team-rating {
+            font-size: 12px; font-weight: bold; background: #000; padding: 2px 8px; 
+            border-radius: 10px; border: 1px solid #444;
+        }
+
         .score-display {
-            min-width: 60px; height: 50px; background: #000; border: 2px solid #222; border-radius: 5px;
+            min-width: 50px; height: 40px; background: #000; border: 2px solid #222; border-radius: 5px;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Orbitron', monospace;
-            font-size: 40px; cursor: pointer; white-space: nowrap; padding: 0 10px;
+            font-size: 30px; cursor: pointer; white-space: nowrap; padding: 0 10px;
         }
 
         .blue-text .team-label-text { color: #3498db; }
         .blue-text .score-display { color: #3498db; text-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .blue-text .team-rating { color: #f1c40f; border-color: #3498db; }
         
         .orange-text .team-label-text { color: #e67e22; }
         .orange-text .score-display { color: #e67e22; text-shadow: 0 0 10px rgba(230, 126, 34, 0.5); }
+        .orange-text .team-rating { color: #f1c40f; border-color: #e67e22; }
 
         .green-text .team-label-text { color: #2ecc71; }
         .green-text .score-display { color: #2ecc71; text-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
-
-        .center-board {
-            display: flex; flex-direction: column; align-items: center;
-            color: #555; font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 2px;
-        }
-        .center-board .colon { font-size: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); margin-bottom: 2px; }
+        .green-text .team-rating { color: #f1c40f; border-color: #2ecc71; }
 
         /* --- DYNAMIC MODE TOGGLING --- */
         .teamC-element { display: none !important; }
@@ -95,9 +100,13 @@
             padding-top: 10px; overflow-y: auto; 
         }
 
-        .court-wrapper { padding: 8px; display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; }
-        .court-1-2 { flex-grow: 1; min-height: 180px; }
-        .court-3 { justify-content: center; padding-top: 0; min-height: 150px; }
+        .court-wrapper { padding: 6px 10px; display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; }
+        
+        /* Adjusted heights! A/B has 3 rows, C has 2 rows. 
+           Giving A/B a flex-grow of 3 and C a flex-grow of 2 makes the boxes identical sizes. 
+        */
+        .court-1-2 { flex-grow: 3; min-height: 120px; } 
+        .court-3 { justify-content: center; padding-top: 0; flex-grow: 2; min-height: 80px; }
         
         .half-court {
             flex-grow: 1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr);
@@ -109,12 +118,19 @@
         
         #side_C { 
             background-color: #196f3d; 
-            width: 100%; max-width: 600px; 
+            width: 100%; /* Fully expands across screen width */
             grid-template-columns: repeat(3, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
         } 
         
+        /* Original Vertical Net */
         .net { width: 6px; height: auto; background-color: white; border-radius: 3px; margin: 0 4px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+
+        /* New Horizontal Net */
+        .horizontal-net {
+            height: 6px; background-color: white; border-radius: 3px; 
+            margin: 2px 14px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
 
         .zone {
             background-color: rgba(255, 255, 255, 0.1); border: 2px dashed rgba(255, 255, 255, 0.3);
@@ -126,7 +142,7 @@
         .bench-container {
             height: 130px; background: #34495e; padding: 8px; display: flex; flex-direction: row;
             align-items: center; gap: 10px; border-top: 2px solid #2c3e50; box-sizing: border-box; flex-shrink: 0;
-            touch-action: pan-x; /* Explicitly allow horizontal scroll here */
+            touch-action: pan-x; 
         }
         .bench-label { font-size: 14px; font-weight: bold; color: #95a5a6; text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg); flex-shrink: 0; }
         
@@ -136,7 +152,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Custom subtle scrollbar for the bench */
         .bench-slots::-webkit-scrollbar { height: 6px; }
         .bench-slots::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
         .bench-slots::-webkit-scrollbar-thumb { background: #7f8c8d; border-radius: 3px; }
@@ -152,19 +167,21 @@
             transition: background-color 0.2s, color 0.2s, border 0.2s;
         }
         .player-name { font-weight: bold; pointer-events: none; }
+        .player-rating { font-size: 10px; font-weight: bold; color: #f1c40f; pointer-events: none; margin-top: 2px; }
 
         .bench-slots .player { 
             position: relative; width: 90px; height: 100%; border-radius: 6px; 
             background-color: #f1c40f; color: #2c3e50; border: 2px solid #fff;
         }
         .bench-slots .player .player-name { font-size: 14px; }
+        .bench-slots .player .player-rating { color: #2c3e50; }
 
         .zone .player { 
             position: absolute; top: 2px; left: 2px; 
             width: calc(100% - 4px); height: calc(100% - 4px); 
             border-radius: 6px; margin: 0;
         }
-        .zone .player .player-name { font-size: 18px; font-weight: 800; }
+        .zone .player .player-name { font-size: 16px; font-weight: 800; }
 
         #side_A .zone .player { background-color: #3498db; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
         #side_B .zone .player { background-color: #e67e22; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
@@ -186,11 +203,13 @@
         .modal-content {
             background: #2c3e50; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px;
             display: flex; flex-direction: column; gap: 15px; max-height: 90vh; overflow-y: auto;
-            touch-action: pan-y; /* Allow vertical scroll in modal */
+            touch-action: pan-y;
         }
         .modal-title { font-size: 18px; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 5px; }
         
-        .form-group input[type="text"] { background: #1a252f; color: white; padding: 10px; border-radius: 5px; border: 1px solid #34495e; font-size: 16px; width: 100%; box-sizing: border-box;}
+        .form-group-flex { display: flex; gap: 10px; width: 100%; box-sizing: border-box; }
+        .form-group-flex input[type="text"] { flex-grow: 1; background: #1a252f; color: white; padding: 10px; border-radius: 5px; border: 1px solid #34495e; font-size: 16px; }
+        .form-group-flex input[type="number"] { width: 70px; background: #1a252f; color: #f1c40f; padding: 10px; border-radius: 5px; border: 1px solid #f1c40f; font-size: 16px; text-align: center; font-weight: bold; }
         
         .priority-zones-container { display: flex; flex-direction: column; gap: 10px; }
         .tier-zone-wrapper { background: #1a252f; border-radius: 8px; padding: 10px; border: 1px solid #34495e; }
@@ -247,25 +266,21 @@
         <div id="export-area">
             <div class="scoreboard-container">
                 <div class="scoreboard">
-                    <div class="team-score blue-text">
+                    <div class="team-block blue-text">
                         <div class="team-label-text" id="teamNameA" onclick="editTeamName('teamNameA')" dir="auto">HOME</div>
+                        <div class="team-rating" id="ratingA">⭐ 0.0</div>
                         <div class="score-display" id="scoreA" onclick="editScore('scoreA')">0</div>
                     </div>
-                    <div class="center-board">
-                        <div id="currentDate" style="font-size: 10px; font-family: sans-serif; color: #bdc3c7; margin-bottom: 2px;"></div>
-                        <div class="colon">-</div>
-                        <div>SETS</div>
-                    </div>
-                    <div class="team-score orange-text">
+                    
+                    <div class="team-block orange-text">
                         <div class="team-label-text" id="teamNameB" onclick="editTeamName('teamNameB')" dir="auto">GUEST</div>
+                        <div class="team-rating" id="ratingB">⭐ 0.0</div>
                         <div class="score-display" id="scoreB" onclick="editScore('scoreB')">0</div>
                     </div>
                     
-                    <div class="center-board teamC-element">
-                        <div class="colon" style="color: #444; text-shadow:none;">|</div>
-                    </div>
-                    <div class="team-score green-text teamC-element">
-                        <div class="team-label-text" id="teamNameC" onclick="editTeamName('teamNameC')" dir="auto">WAITING</div>
+                    <div class="team-block green-text teamC-element">
+                        <div class="team-label-text" id="teamNameC" onclick="editTeamName('teamNameC')" dir="auto">TEAM C</div>
+                        <div class="team-rating" id="ratingC">⭐ 0.0</div>
                         <div class="score-display" id="scoreC" onclick="editScore('scoreC')">0</div>
                     </div>
                 </div>
@@ -292,6 +307,8 @@
                     <div class="zone dropzone" id="B_BR" data-role="SR"></div> 
                 </div>
             </div>
+            
+            <div class="horizontal-net teamC-element"></div>
 
             <div class="court-wrapper court-3 teamC-element">
                 <div class="half-court" id="side_C">
@@ -316,11 +333,13 @@
     <div class="modal-overlay" id="playerModal">
         <div class="modal-content">
             <div class="modal-title" id="modalTitle">Add Player</div>
-            <div class="form-group">
+            
+            <div class="form-group-flex">
                 <input type="text" id="playerName" placeholder="Player Name" maxlength="12">
-                <div style="font-size: 11px; color: #f1c40f; text-align: center; margin-top: 5px;">
-                    <b>S:</b> Setter | <b>MR:</b> Mid Rec | <b>LS:</b> Left Spike | <b>RS:</b> Right Spike | <b>SR:</b> Side Rec
-                </div>
+                <input type="number" id="playerRating" min="1" max="10" placeholder="1-10">
+            </div>
+            <div style="font-size: 11px; color: #f1c40f; text-align: center; margin-top: -5px; margin-bottom: 5px;">
+                <b>S:</b> Setter | <b>MR:</b> Mid Rec | <b>LS:</b> Left Spike | <b>RS:</b> Right Spike | <b>SR:</b> Side Rec
             </div>
             
             <div class="priority-zones-container">
@@ -405,9 +424,6 @@
         let editingPlayerId = null;
 
         window.onload = function() {
-            const dateOpts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-            document.getElementById('currentDate').innerText = new Date().toLocaleDateString(undefined, dateOpts);
-
             const weekSelector = document.getElementById('weekSelector');
             for(let i = 1; i <= 50; i++) {
                 let opt = document.createElement('option');
@@ -416,6 +432,7 @@
             }
             loadWeek();
             setupModalDrag();
+            calculateTeamRatings();
         };
 
         // --- 3 TEAM TOGGLE LOGIC ---
@@ -429,11 +446,14 @@
                 document.getElementById('modeToggleBtn').innerText = '3 Teams';
                 document.querySelectorAll('#side_C .player').forEach(p => bench.appendChild(p));
             }
+            calculateTeamRatings();
             if (!skipSave) saveWeekData();
         }
 
         function getGlobalRoster() { 
             let roster = JSON.parse(localStorage.getItem('vball_roster_final')) || []; 
+            // Backwards compatibility: assign 5 rating if missing
+            roster.forEach(p => { if(!p.rating) p.rating = 5; });
             return roster;
         }
 
@@ -452,7 +472,7 @@
                 scoreC: document.getElementById('scoreC').innerText || "0",
                 teamNameA: document.getElementById('teamNameA').innerText || "HOME",
                 teamNameB: document.getElementById('teamNameB').innerText || "GUEST",
-                teamNameC: document.getElementById('teamNameC').innerText || "WAITING",
+                teamNameC: document.getElementById('teamNameC').innerText || "TEAM C",
                 isThreeTeams: isThreeTeams
             };
             localStorage.setItem('vball_data_f_' + week, JSON.stringify(data));
@@ -466,7 +486,7 @@
             const roster = getGlobalRoster();
             const weekData = JSON.parse(localStorage.getItem('vball_data_f_' + week)) || { 
                 positions: {}, scoreA: "0", scoreB: "0", scoreC: "0", 
-                teamNameA: "HOME", teamNameB: "GUEST", teamNameC: "WAITING", isThreeTeams: false 
+                teamNameA: "HOME", teamNameB: "GUEST", teamNameC: "TEAM C", isThreeTeams: false 
             };
 
             document.getElementById('scoreA').innerText = weekData.scoreA;
@@ -474,7 +494,7 @@
             document.getElementById('scoreC').innerText = weekData.scoreC || "0";
             document.getElementById('teamNameA').innerText = weekData.teamNameA;
             document.getElementById('teamNameB').innerText = weekData.teamNameB;
-            document.getElementById('teamNameC').innerText = weekData.teamNameC || "WAITING";
+            document.getElementById('teamNameC').innerText = weekData.teamNameC || "TEAM C";
             
             if (weekData.isThreeTeams !== isThreeTeams) {
                 toggleThreeTeams(true);
@@ -487,11 +507,14 @@
                 }
                 createPlayerElement(p, targetId);
             });
+            
+            calculateTeamRatings();
         }
 
         function clearCourt() {
             if(confirm("Move all to bench?")) {
                 document.querySelectorAll('.zone .player').forEach(p => bench.appendChild(p));
+                calculateTeamRatings();
                 saveWeekData();
             }
         }
@@ -552,6 +575,19 @@
             }
         }
 
+        // --- DYNAMIC RATING CALCULATOR ---
+        function calculateTeamRatings() {
+            const roster = getGlobalRoster();
+            ['A', 'B', 'C'].forEach(team => {
+                let totalRating = 0;
+                document.querySelectorAll(`#side_${team} .zone .player`).forEach(pEl => {
+                    let pObj = roster.find(r => r.id === pEl.id);
+                    if (pObj) totalRating += (pObj.rating || 5);
+                });
+                document.getElementById(`rating${team}`).innerText = `⭐ ${totalRating}`;
+            });
+        }
+
         async function shareLineup() {
             const captureArea = document.getElementById('export-area');
             const btn = document.getElementById('shareBtn');
@@ -602,9 +638,10 @@
             });
 
             if(playerId) {
-                document.getElementById('modalTitle').innerText = "Edit Player Priority";
+                document.getElementById('modalTitle').innerText = "Edit Player";
                 const p = roster.find(player => player.id === playerId);
                 document.getElementById('playerName').value = p.name;
+                document.getElementById('playerRating').value = p.rating || 5;
                 
                 let sortedPositions = Object.keys(p.stats).map(pos => {
                     return { pos: pos, tier: p.stats[pos].tier, rank: p.stats[pos].rank };
@@ -620,6 +657,7 @@
             } else {
                 document.getElementById('modalTitle').innerText = "Add Player";
                 document.getElementById('playerName').value = '';
+                document.getElementById('playerRating').value = 5;
                 
                 const defaultPos = ['S', 'MR', 'LS', 'RS', 'SR'];
                 defaultPos.forEach((pos, index) => {
@@ -643,39 +681,46 @@
             if (!editingPlayerId && roster.length >= MAX_PLAYERS) { alert('Bench full!'); return; }
             const name = document.getElementById('playerName').value.trim();
             if (!name) return;
+            
+            let rating = parseInt(document.getElementById('playerRating').value) || 5;
+            if(rating < 1) rating = 1; if(rating > 10) rating = 10;
 
             let newStats = {};
             ['S', 'MR', 'LS', 'RS', 'SR'].forEach(pos => {
                 const token = document.getElementById('pos_' + pos);
                 const parentSlot = token.parentElement;
-                
                 if (parentSlot && parentSlot.classList.contains('rank-slot')) {
-                    newStats[pos] = {
-                        tier: parseInt(parentSlot.getAttribute('data-tier')),
-                        rank: parseInt(parentSlot.getAttribute('data-rank'))
-                    };
+                    newStats[pos] = { tier: parseInt(parentSlot.getAttribute('data-tier')), rank: parseInt(parentSlot.getAttribute('data-rank')) };
                 }
             });
 
             if (editingPlayerId) {
                 const pIndex = roster.findIndex(p => p.id === editingPlayerId);
                 roster[pIndex].name = name;
+                roster[pIndex].rating = rating;
                 roster[pIndex].stats = newStats;
-                document.getElementById(editingPlayerId).querySelector('.player-name').innerText = name;
+                
+                let pEl = document.getElementById(editingPlayerId);
+                pEl.querySelector('.player-name').innerText = name;
+                pEl.querySelector('.player-rating').innerText = `⭐ ${rating}`;
             } else {
-                const newPlayer = { id: 'player_' + Date.now(), name: name, stats: newStats };
+                const newPlayer = { id: 'player_' + Date.now(), name: name, rating: rating, stats: newStats };
                 roster.push(newPlayer);
                 createPlayerElement(newPlayer, 'bench');
             }
             
             saveGlobalRoster(roster);
+            calculateTeamRatings();
             closeModals();
         }
 
         function createPlayerElement(pData, locationId) {
             const el = document.createElement('div');
             el.className = 'player'; el.id = pData.id;
-            el.innerHTML = `<div class="player-name">${pData.name}</div>`;
+            el.innerHTML = `
+                <div class="player-name">${pData.name}</div>
+                <div class="player-rating">⭐ ${pData.rating || 5}</div>
+            `;
             el.addEventListener('touchstart', dragStart, {passive: false});
             el.addEventListener('mousedown', dragStart);
             let container = document.getElementById(locationId);
@@ -683,6 +728,7 @@
             container.appendChild(el);
         }
 
+        // --- NEW ELO-BALANCED DRAFTING ENGINE ---
         function handleAutoGenClick() {
             const courtPlayers = document.querySelectorAll('.half-court .zone .player');
             if (courtPlayers.length === 12 || courtPlayers.length === 18) {
@@ -695,7 +741,7 @@
 
         function openGenerateModal() {
             const roster = getGlobalRoster();
-            if(roster.length < 12) { alert(`Need at least 12 players! (Currently ${roster.length})`); return; }
+            if(roster.length < 12) { alert(`Need at least 12 players!`); return; }
             
             let onCourtIds = [];
             document.querySelectorAll('.half-court .zone .player').forEach(p => onCourtIds.push(p.id));
@@ -707,7 +753,7 @@
                 let isChecked = onCourtIds.includes(p.id) ? 'checked' : '';
                 let div = document.createElement('div');
                 div.className = 'gen-item';
-                div.innerHTML = `<input type="checkbox" value="${p.id}" onchange="updateSelectCount()" ${isChecked}> <span>${p.name}</span>`;
+                div.innerHTML = `<input type="checkbox" value="${p.id}" onchange="updateSelectCount()" ${isChecked}> <span style="flex-grow:1;">${p.name}</span> <span style="color:#f1c40f; font-weight:bold; font-size:12px;">⭐ ${p.rating||5}</span>`;
                 list.appendChild(div);
             });
             
@@ -748,11 +794,7 @@
 
             document.querySelectorAll('.zone .player').forEach(p => bench.appendChild(p));
 
-            pool.forEach(p => {
-                p.totalPower = Object.values(p.stats).reduce((sum, stat) => sum + stat.tier, 0);
-                p.tierCounts = { 3: 0, 2: 0, 1: 0 };
-                for (let role in p.stats) p.tierCounts[p.stats[role].tier]++;
-            });
+            let currentTeamScores = { A: 0, B: 0, C: 0 };
 
             const draftOrder = [
                 { role: 'S',  zones: ['A_FM', 'B_FM', 'C_FM'] },
@@ -765,30 +807,37 @@
 
             draftOrder.forEach(draft => {
                 let activeZones = numTeams === 3 ? draft.zones : draft.zones.slice(0, 2);
-                activeZones = activeZones.sort(() => Math.random() - 0.5);
 
                 for(let i=0; i < numTeams; i++) {
-                    pool.sort((a, b) => sortPlayers(a, b, draft.role));
+                    pool.sort((a, b) => sortPlayersForDraft(a, b, draft.role));
                     let pickedPlayer = pool.shift();
-                    document.getElementById(activeZones[i]).appendChild(document.getElementById(pickedPlayer.id));
+                    
+                    activeZones.sort((zone1, zone2) => {
+                        let team1 = zone1.charAt(0);
+                        let team2 = zone2.charAt(0);
+                        return currentTeamScores[team1] - currentTeamScores[team2];
+                    });
+                    
+                    let targetZone = activeZones[0]; 
+                    document.getElementById(targetZone).appendChild(document.getElementById(pickedPlayer.id));
+                    
+                    currentTeamScores[targetZone.charAt(0)] += (pickedPlayer.rating || 5);
+                    activeZones.shift(); 
                 }
             });
 
+            calculateTeamRatings();
             saveWeekData();
         }
 
-        function sortPlayers(a, b, role) {
+        function sortPlayersForDraft(a, b, role) {
             let aStat = a.stats[role];
             let bStat = b.stats[role];
 
             if (aStat.tier !== bStat.tier) return bStat.tier - aStat.tier;
             if (aStat.rank !== bStat.rank) return aStat.rank - bStat.rank;
-            if (a.totalPower !== b.totalPower) return a.totalPower - b.totalPower;
+            if ((a.rating||5) !== (b.rating||5)) return (b.rating||5) - (a.rating||5);
             
-            let aCount = a.tierCounts[aStat.tier];
-            let bCount = b.tierCounts[bStat.tier];
-            if (aCount !== bCount) return aCount - bCount;
-
             return Math.random() - 0.5;
         }
 
@@ -803,7 +852,6 @@
         }
 
         function dragStart(e) {
-            // Note: intentionally removed e.preventDefault() here to allow native horizontal scroll 
             activePlayer = e.target.closest('.player');
             if (!activePlayer) return;
             
@@ -824,26 +872,22 @@
             
             const coords = getEventCoords(e);
             
-            // Check swipe vs drag distance threshold (10px)
             if (!activePlayer.classList.contains('dragging')) {
                 const dx = Math.abs(coords.x - startX);
                 const dy = Math.abs(coords.y - startY);
                 
                 if (dx > 10 || dy > 10) {
-                    // If moving horizontally inside the bench, cancel drag to let native scroll take over
                     if (originalZone && originalZone.id === 'bench' && dx > dy) {
                         cleanupMainListeners();
                         activePlayer = null;
                         return; 
                     }
-                    // Otherwise, activate the drag!
                     activePlayer.classList.add('dragging');
                     activePlayer.style.left = (coords.x - 45) + 'px';
                     activePlayer.style.top = (coords.y - 22.5) + 'px'; 
                 }
             }
 
-            // Once dragging is confirmed, follow finger and prevent background scroll
             if (activePlayer.classList.contains('dragging')) {
                 if(e.cancelable) e.preventDefault(); 
                 activePlayer.style.left = (coords.x - 45) + 'px';
@@ -853,7 +897,6 @@
 
         function dragEnd(e) {
             if (activePlayer) {
-                // If the player was just tapped (never moved past threshold)
                 if (!activePlayer.classList.contains('dragging')) {
                     let clickedId = activePlayer.id;
                     activePlayer = null;
@@ -894,6 +937,7 @@
 
                 activePlayer = null;
                 originalZone = null;
+                calculateTeamRatings();
                 saveWeekData(); 
                 cleanupMainListeners();
             }
