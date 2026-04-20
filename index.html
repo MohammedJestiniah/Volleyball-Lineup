@@ -32,7 +32,7 @@
         button { background-color: #27ae60; color: white; cursor: pointer; }
         .btn-danger { background-color: #e74c3c; }
         .btn-magic { background-color: #8e44ad; }
-        .btn-debug { background-color: #7f8c8d; padding: 8px; }
+        .btn-debug { background-color: #7f8c8d; padding: 8px 12px; }
         .btn-share { background-color: #3498db; }
         button:active { filter: brightness(1.2); transform: scale(0.98); }
 
@@ -52,14 +52,12 @@
 
         .team-score { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         
-        /* Removed letter-spacing to prevent Arabic text from scrambling in screenshots */
         .team-label-text {
             font-size: 16px; font-weight: 900;
             cursor: pointer; padding-bottom: 2px; border-bottom: 1px dashed rgba(255,255,255,0.3);
             text-align: center; min-width: 80px; white-space: nowrap;
         }
 
-        /* Added specific height and flex centering to prevent Orbitron font from cropping */
         .score-display {
             min-width: 60px; height: 50px; background: #000; border: 2px solid #222; border-radius: 5px;
             display: flex; align-items: center; justify-content: center;
@@ -436,7 +434,6 @@
             alert("Roster JSON copied to clipboard!");
         }
 
-        // --- JSON IMPORT LOGIC ---
         function openImportModal() {
             document.getElementById('importText').value = '';
             document.getElementById('importModal').style.display = 'flex';
@@ -463,7 +460,6 @@
             }
         }
 
-        // --- TAP-TO-EDIT FOR SCOREBOARD (Protects Arabic Screenshots) ---
         function editTeamName(elementId) {
             const el = document.getElementById(elementId);
             const newName = prompt("Enter Team Name:", el.innerText);
@@ -482,7 +478,6 @@
             }
         }
 
-        // --- WHATSAPP SHARE FEATURE WITH CAMERA DELAY ---
         async function shareLineup() {
             const captureArea = document.getElementById('export-area');
             const btn = document.getElementById('shareBtn');
@@ -490,11 +485,7 @@
             
             try {
                 btn.innerText = "⏳";
-                
-                // Force scroll to top so screenshot engine captures entire board
                 window.scrollTo(0,0); 
-                
-                // Delay 200ms to allow mobile browsers to finish UI scroll animations before taking picture
                 await new Promise(resolve => setTimeout(resolve, 200));
                 
                 const canvas = await html2canvas(captureArea, {
@@ -526,7 +517,7 @@
             }
         }
 
-        // --- MODAL LOGIC ---
+        // --- FIXED PLAYER EDIT LOGIC ---
         function openPlayerModal(playerId = null) {
             editingPlayerId = playerId;
             const roster = getGlobalRoster();
@@ -546,12 +537,14 @@
                     return { pos: pos, tier: p.stats[pos].tier, rank: p.stats[pos].rank };
                 });
                 
-                [3, 2, 1].forEach(tierLvl => {
-                    let tierList = sortedPositions.filter(s => s.tier === tierLvl).sort((a,b) => a.rank - b.rank);
-                    tierList.forEach(s => {
-                        document.getElementById('tier_' + tierLvl).appendChild(document.getElementById('pos_' + s.pos));
-                    });
+                // FIXED: This now properly targets the new flexible tier/rank slots
+                sortedPositions.forEach(s => {
+                    let targetSlot = document.querySelector(`.rank-slot[data-tier="${s.tier}"][data-rank="${s.rank}"]`);
+                    if (targetSlot) {
+                        targetSlot.appendChild(document.getElementById('pos_' + s.pos));
+                    }
                 });
+
             } else {
                 document.getElementById('modalTitle').innerText = "Add Player";
                 document.getElementById('playerName').value = '';
@@ -618,7 +611,6 @@
             container.appendChild(el);
         }
 
-        // --- INSTANT AUTO GENERATOR ---
         function handleAutoGenClick() {
             const courtPlayers = document.querySelectorAll('.half-court .zone .player');
             if (courtPlayers.length === 12) {
