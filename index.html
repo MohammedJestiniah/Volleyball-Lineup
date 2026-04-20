@@ -105,7 +105,14 @@
         
         #side_A { background-color: #1a5276; } 
         #side_B { background-color: #873600; }
-        #side_C { background-color: #196f3d; max-width: 50%; } 
+        
+        /* specific 3x2 grid layout just for Team C */
+        #side_C { 
+            background-color: #196f3d; 
+            width: 100%; max-width: 600px; /* Keep it nicely centered and sized */
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: repeat(2, 1fr); 
+        } 
         
         .net { width: 6px; height: auto; background-color: white; border-radius: 3px; margin: 0 4px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
 
@@ -280,12 +287,13 @@
 
             <div class="court-wrapper court-3 teamC-element">
                 <div class="half-court" id="side_C">
-                    <div class="zone dropzone" id="C_BL" data-role="SR"></div> 
                     <div class="zone dropzone" id="C_FL" data-role="LS"></div> 
-                    <div class="zone dropzone" id="C_BM" data-role="MR"></div> 
                     <div class="zone dropzone" id="C_FM" data-role="S"></div>  
-                    <div class="zone dropzone" id="C_BR" data-role="SR"></div> 
                     <div class="zone dropzone" id="C_FR" data-role="RS"></div> 
+                    
+                    <div class="zone dropzone" id="C_BL" data-role="SR"></div> 
+                    <div class="zone dropzone" id="C_BM" data-role="MR"></div> 
+                    <div class="zone dropzone" id="C_BR" data-role="SR"></div> 
                 </div>
             </div>
         </div>
