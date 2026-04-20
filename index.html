@@ -25,7 +25,7 @@
             z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
-        .controls { display: flex; gap: 8px; }
+        .controls { display: flex; gap: 8px; align-items: center; }
         select, button { padding: 8px 12px; border: none; border-radius: 5px; font-size: 14px; font-weight: bold; }
         select { background: #34495e; color: white; border: 1px solid #7f8c8d; }
         
@@ -34,6 +34,7 @@
         .btn-magic { background-color: #8e44ad; }
         .btn-debug { background-color: #7f8c8d; padding: 8px 12px; }
         .btn-share { background-color: #3498db; }
+        .btn-toggle { background-color: #f39c12; }
         button:active { filter: brightness(1.2); transform: scale(0.98); }
 
         /* --- SCOREBOARD --- */
@@ -46,7 +47,7 @@
 
         .scoreboard {
             display: flex; justify-content: space-between; align-items: center;
-            width: 100%; max-width: 600px; background: #111;
+            width: 100%; max-width: 800px; background: #111;
             border: 2px solid #444; border-radius: 8px; padding: 10px 20px;
         }
 
@@ -71,11 +72,18 @@
         .orange-text .team-label-text { color: #e67e22; }
         .orange-text .score-display { color: #e67e22; text-shadow: 0 0 10px rgba(230, 126, 34, 0.5); }
 
+        .green-text .team-label-text { color: #2ecc71; }
+        .green-text .score-display { color: #2ecc71; text-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
+
         .center-board {
             display: flex; flex-direction: column; align-items: center;
             color: #555; font-family: 'Orbitron', monospace; font-size: 14px; letter-spacing: 2px;
         }
         .center-board .colon { font-size: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); margin-bottom: 2px; }
+
+        /* --- DYNAMIC MODE TOGGLING --- */
+        .teamC-element { display: none !important; }
+        .mode-3-teams .teamC-element { display: flex !important; }
 
         /* --- MAIN LAYOUT --- */
         .main-area { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; width: 100%; }
@@ -83,18 +91,21 @@
         #export-area { 
             display: flex; flex-direction: column; flex-grow: 1; min-height: 0; 
             background-color: #1a252f; width: 100%; box-sizing: border-box;
-            padding-top: 10px; 
+            padding-top: 10px; overflow-y: auto; /* Allows scrolling if 3 courts get tall */
         }
 
-        .court-wrapper { flex-grow: 1; padding: 8px; display: flex; flex-direction: row; gap: 4px; min-height: 0; }
+        .court-wrapper { padding: 8px; display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; }
+        .court-1-2 { flex-grow: 1; min-height: 180px; }
+        .court-3 { justify-content: center; padding-top: 0; min-height: 150px; }
         
         .half-court {
             flex-grow: 1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr);
-            gap: 4px; padding: 4px; border-radius: 8px; min-height: 0;
+            gap: 4px; padding: 4px; border-radius: 8px;
         }
         
         #side_A { background-color: #1a5276; } 
         #side_B { background-color: #873600; }
+        #side_C { background-color: #196f3d; max-width: 50%; } 
         
         .net { width: 6px; height: auto; background-color: white; border-radius: 3px; margin: 0 4px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
 
@@ -143,6 +154,7 @@
 
         #side_A .zone .player { background-color: #3498db; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
         #side_B .zone .player { background-color: #e67e22; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
+        #side_C .zone .player { background-color: #2ecc71; color: #ffffff; border: 2px solid #ffffff; box-shadow: inset 0 0 5px rgba(0,0,0,0.2); }
         
         .player.dragging {
             position: fixed !important; pointer-events: none; 
@@ -165,37 +177,25 @@
         
         .form-group input[type="text"] { background: #1a252f; color: white; padding: 10px; border-radius: 5px; border: 1px solid #34495e; font-size: 16px; width: 100%; box-sizing: border-box;}
         
-        /* Flex List Priority Zones */
         .priority-zones-container { display: flex; flex-direction: column; gap: 10px; }
         .tier-zone-wrapper { background: #1a252f; border-radius: 8px; padding: 10px; border: 1px solid #34495e; }
         .tier-title { font-size: 12px; font-weight: bold; color: #bdc3c7; margin-bottom: 8px; text-transform: uppercase; }
         
-        .tier-slots-container {
-            display: flex; gap: 5px; width: 100%; justify-content: space-between;
-        }
+        .tier-slots-container { display: flex; gap: 5px; width: 100%; justify-content: space-between; }
         
         .rank-slot {
             flex: 1; height: 45px; background: rgba(0,0,0,0.3); border: 2px dashed #7f8c8d; 
             border-radius: 6px; display: flex; align-items: center; justify-content: center; 
             position: relative; box-sizing: border-box;
         }
-        
-        .rank-slot::after {
-            content: attr(data-rank); position: absolute; font-size: 20px; font-weight: bold; 
-            color: rgba(255,255,255,0.1); z-index: 0; pointer-events: none;
-        }
+        .rank-slot::after { content: attr(data-rank); position: absolute; font-size: 20px; font-weight: bold; color: rgba(255,255,255,0.1); z-index: 0; pointer-events: none; }
 
         .pos-token {
             width: 100%; height: 100%; background: #3498db; color: white; border-radius: 5px;
             font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center;
-            cursor: grab; user-select: none; touch-action: none; border: 2px solid #2980b9; z-index: 10;
-            box-sizing: border-box;
+            cursor: grab; user-select: none; touch-action: none; border: 2px solid #2980b9; z-index: 10; box-sizing: border-box;
         }
-        
-        .pos-dragging {
-            position: fixed !important; pointer-events: none; width: 50px !important; height: 50px !important; 
-            z-index: 3000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); opacity: 0.9;
-        }
+        .pos-dragging { position: fixed !important; pointer-events: none; width: 50px !important; height: 50px !important; z-index: 3000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); opacity: 0.9; }
 
         .modal-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
         .modal-actions button { padding: 10px 20px; }
@@ -204,7 +204,6 @@
         .gen-item { display: flex; align-items: center; gap: 10px; background: #34495e; padding: 10px; border-radius: 5px; }
         .gen-item input { transform: scale(1.5); }
         
-        /* Import Textarea */
         #importText {
             width: 100%; background: #1a252f; color: white; border: 1px solid #34495e; 
             border-radius: 5px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px;
@@ -216,12 +215,13 @@
     <div class="header">
         <div class="controls">
             <select id="weekSelector" onchange="loadWeek()" style="background:white; color:black; border:none;"></select>
-            <button class="btn-share" id="shareBtn" onclick="shareLineup()">📤</button>
+            <button class="btn-toggle" id="modeToggleBtn" onclick="toggleThreeTeams()">3 Teams</button>
             <button class="btn-danger" onclick="clearCourt()">Clear</button>
             <button class="btn-debug" onclick="copyDebugData()" title="Export JSON">🐞</button>
             <button class="btn-debug" onclick="openImportModal()" title="Import JSON">📥</button>
         </div>
         <div class="controls">
+            <button class="btn-share" id="shareBtn" onclick="shareLineup()">📤</button>
             <button class="btn-magic" onclick="handleAutoGenClick()">⚡ Auto-Gen</button>
             <button onclick="openPlayerModal()">+ Player</button>
         </div>
@@ -245,17 +245,48 @@
                         <div class="team-label-text" id="teamNameB" onclick="editTeamName('teamNameB')" dir="auto">GUEST</div>
                         <div class="score-display" id="scoreB" onclick="editScore('scoreB')">0</div>
                     </div>
+                    
+                    <div class="center-board teamC-element">
+                        <div class="colon" style="color: #444; text-shadow:none;">|</div>
+                    </div>
+                    <div class="team-score green-text teamC-element">
+                        <div class="team-label-text" id="teamNameC" onclick="editTeamName('teamNameC')" dir="auto">WAITING</div>
+                        <div class="score-display" id="scoreC" onclick="editScore('scoreC')">0</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="court-wrapper">
+            <div class="court-wrapper court-1-2">
                 <div class="half-court" id="side_A">
-                    <div class="zone dropzone" id="A_BL" data-role="SR"></div> <div class="zone dropzone" id="A_FL" data-role="LS"></div> <div class="zone dropzone" id="A_BM" data-role="MR"></div> <div class="zone dropzone" id="A_FM" data-role="S"></div>  <div class="zone dropzone" id="A_BR" data-role="SR"></div> <div class="zone dropzone" id="A_FR" data-role="RS"></div> </div>
+                    <div class="zone dropzone" id="A_BL" data-role="SR"></div> 
+                    <div class="zone dropzone" id="A_FL" data-role="LS"></div> 
+                    <div class="zone dropzone" id="A_BM" data-role="MR"></div> 
+                    <div class="zone dropzone" id="A_FM" data-role="S"></div>  
+                    <div class="zone dropzone" id="A_BR" data-role="SR"></div> 
+                    <div class="zone dropzone" id="A_FR" data-role="RS"></div> 
+                </div>
                 
                 <div class="net"></div>
                 
                 <div class="half-court" id="side_B">
-                    <div class="zone dropzone" id="B_FL" data-role="RS"></div> <div class="zone dropzone" id="B_BL" data-role="SR"></div> <div class="zone dropzone" id="B_FM" data-role="S"></div>  <div class="zone dropzone" id="B_BM" data-role="MR"></div> <div class="zone dropzone" id="B_FR" data-role="LS"></div> <div class="zone dropzone" id="B_BR" data-role="SR"></div> </div>
+                    <div class="zone dropzone" id="B_FL" data-role="RS"></div> 
+                    <div class="zone dropzone" id="B_BL" data-role="SR"></div> 
+                    <div class="zone dropzone" id="B_FM" data-role="S"></div>  
+                    <div class="zone dropzone" id="B_BM" data-role="MR"></div> 
+                    <div class="zone dropzone" id="B_FR" data-role="LS"></div> 
+                    <div class="zone dropzone" id="B_BR" data-role="SR"></div> 
+                </div>
+            </div>
+
+            <div class="court-wrapper court-3 teamC-element">
+                <div class="half-court" id="side_C">
+                    <div class="zone dropzone" id="C_BL" data-role="SR"></div> 
+                    <div class="zone dropzone" id="C_FL" data-role="LS"></div> 
+                    <div class="zone dropzone" id="C_BM" data-role="MR"></div> 
+                    <div class="zone dropzone" id="C_FM" data-role="S"></div>  
+                    <div class="zone dropzone" id="C_BR" data-role="SR"></div> 
+                    <div class="zone dropzone" id="C_FR" data-role="RS"></div> 
+                </div>
             </div>
         </div>
 
@@ -326,12 +357,12 @@
 
     <div class="modal-overlay" id="generateModal">
         <div class="modal-content">
-            <div class="modal-title">Select 12 Players to Auto-Gen</div>
-            <div style="font-size: 12px; color: #bdc3c7;" id="selectCount">0 / 12 Selected</div>
+            <div class="modal-title">Auto-Gen Lineup</div>
+            <div style="font-size: 12px; color: #f1c40f;" id="selectCount">Select exactly 12 or 18 players</div>
             <div class="generate-list" id="generateList"></div>
             <div class="modal-actions">
                 <button class="btn-danger" onclick="closeModals()">Cancel</button>
-                <button class="btn-magic" onclick="runGeneratorFromModal()">Generate Lineup</button>
+                <button class="btn-magic" onclick="runGeneratorFromModal()">Generate</button>
             </div>
         </div>
     </div>
@@ -351,6 +382,7 @@
     <script>
         const MAX_PLAYERS = 30;
         const bench = document.getElementById('bench');
+        let isThreeTeams = false;
         
         let activePlayer = null;
         let startX, startY; 
@@ -370,6 +402,21 @@
             setupModalDrag();
         };
 
+        // --- 3 TEAM TOGGLE LOGIC ---
+        function toggleThreeTeams(skipSave = false) {
+            isThreeTeams = !isThreeTeams;
+            if (isThreeTeams) {
+                document.body.classList.add('mode-3-teams');
+                document.getElementById('modeToggleBtn').innerText = '2 Teams';
+            } else {
+                document.body.classList.remove('mode-3-teams');
+                document.getElementById('modeToggleBtn').innerText = '3 Teams';
+                // Move Team C players back to bench to prevent them from disappearing
+                document.querySelectorAll('#side_C .player').forEach(p => bench.appendChild(p));
+            }
+            if (!skipSave) saveWeekData();
+        }
+
         function getGlobalRoster() { 
             let roster = JSON.parse(localStorage.getItem('vball_roster_final')) || []; 
             return roster;
@@ -387,8 +434,11 @@
                 positions: courtPositions,
                 scoreA: document.getElementById('scoreA').innerText || "0",
                 scoreB: document.getElementById('scoreB').innerText || "0",
+                scoreC: document.getElementById('scoreC').innerText || "0",
                 teamNameA: document.getElementById('teamNameA').innerText || "HOME",
-                teamNameB: document.getElementById('teamNameB').innerText || "GUEST"
+                teamNameB: document.getElementById('teamNameB').innerText || "GUEST",
+                teamNameC: document.getElementById('teamNameC').innerText || "WAITING",
+                isThreeTeams: isThreeTeams
             };
             localStorage.setItem('vball_data_f_' + week, JSON.stringify(data));
         }
@@ -399,12 +449,21 @@
 
             const week = document.getElementById('weekSelector').value;
             const roster = getGlobalRoster();
-            const weekData = JSON.parse(localStorage.getItem('vball_data_f_' + week)) || { positions: {}, scoreA: "0", scoreB: "0", teamNameA: "HOME", teamNameB: "GUEST" };
+            const weekData = JSON.parse(localStorage.getItem('vball_data_f_' + week)) || { 
+                positions: {}, scoreA: "0", scoreB: "0", scoreC: "0", 
+                teamNameA: "HOME", teamNameB: "GUEST", teamNameC: "WAITING", isThreeTeams: false 
+            };
 
             document.getElementById('scoreA').innerText = weekData.scoreA;
             document.getElementById('scoreB').innerText = weekData.scoreB;
+            document.getElementById('scoreC').innerText = weekData.scoreC || "0";
             document.getElementById('teamNameA').innerText = weekData.teamNameA;
             document.getElementById('teamNameB').innerText = weekData.teamNameB;
+            document.getElementById('teamNameC').innerText = weekData.teamNameC || "WAITING";
+            
+            if (weekData.isThreeTeams !== isThreeTeams) {
+                toggleThreeTeams(true); // Sync the UI toggle state
+            }
             
             roster.forEach(p => {
                 let targetId = 'bench';
@@ -537,7 +596,6 @@
                     return { pos: pos, tier: p.stats[pos].tier, rank: p.stats[pos].rank };
                 });
                 
-                // FIXED: This now properly targets the new flexible tier/rank slots
                 sortedPositions.forEach(s => {
                     let targetSlot = document.querySelector(`.rank-slot[data-tier="${s.tier}"][data-rank="${s.rank}"]`);
                     if (targetSlot) {
@@ -611,9 +669,10 @@
             container.appendChild(el);
         }
 
+        // --- DYNAMIC 2 OR 3 TEAM AUTO-GENERATOR ---
         function handleAutoGenClick() {
             const courtPlayers = document.querySelectorAll('.half-court .zone .player');
-            if (courtPlayers.length === 12) {
+            if (courtPlayers.length === 12 || courtPlayers.length === 18) {
                 let selectedIds = Array.from(courtPlayers).map(p => p.id);
                 executeDraft(selectedIds);
             } else {
@@ -645,12 +704,22 @@
 
         function updateSelectCount() {
             const checked = document.querySelectorAll('.gen-item input:checked').length;
-            document.getElementById('selectCount').innerText = `${checked} / 12 Selected`;
+            const countText = document.getElementById('selectCount');
+            countText.innerText = `${checked} Selected`;
+            if(checked === 12 || checked === 18) {
+                countText.style.color = '#2ecc71'; // Green when ready
+            } else {
+                countText.style.color = '#f1c40f'; // Yellow when not ready
+                countText.innerText += ' (Select exactly 12 or 18)';
+            }
         }
 
         function runGeneratorFromModal() {
             const checkedBoxes = document.querySelectorAll('.gen-item input:checked');
-            if(checkedBoxes.length !== 12) { alert("You must select exactly 12 players!"); return; }
+            if(checkedBoxes.length !== 12 && checkedBoxes.length !== 18) { 
+                alert("You must select exactly 12 or 18 players to run the Auto-Gen!"); 
+                return; 
+            }
             let selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
             executeDraft(selectedIds);
             closeModals();
@@ -659,7 +728,13 @@
         function executeDraft(selectedIds) {
             const roster = getGlobalRoster();
             let pool = roster.filter(p => selectedIds.includes(p.id));
+            const numTeams = selectedIds.length === 18 ? 3 : 2;
 
+            // Auto-toggle UI modes based on selection size
+            if (numTeams === 3 && !isThreeTeams) toggleThreeTeams(true);
+            if (numTeams === 2 && isThreeTeams) toggleThreeTeams(true);
+
+            // Move all players to bench first to clear court
             document.querySelectorAll('.zone .player').forEach(p => bench.appendChild(p));
 
             pool.forEach(p => {
@@ -668,26 +743,28 @@
                 for (let role in p.stats) p.tierCounts[p.stats[role].tier]++;
             });
 
+            // Master drafting map for all 3 teams
             const draftOrder = [
-                { role: 'S',  zoneA: 'A_FM', zoneB: 'B_FM' },
-                { role: 'MR', zoneA: 'A_BM', zoneB: 'B_BM' },
-                { role: 'LS', zoneA: 'A_FL', zoneB: 'B_FR' }, 
-                { role: 'RS', zoneA: 'A_FR', zoneB: 'B_FL' }, 
-                { role: 'SR', zoneA: 'A_BL', zoneB: 'B_BL' },
-                { role: 'SR', zoneA: 'A_BR', zoneB: 'B_BR' }
+                { role: 'S',  zones: ['A_FM', 'B_FM', 'C_FM'] },
+                { role: 'MR', zones: ['A_BM', 'B_BM', 'C_BM'] },
+                { role: 'LS', zones: ['A_FL', 'B_FR', 'C_FL'] }, // B is mirrored, A and C are standard
+                { role: 'RS', zones: ['A_FR', 'B_FL', 'C_FR'] }, 
+                { role: 'SR', zones: ['A_BL', 'B_BL', 'C_BL'] },
+                { role: 'SR', zones: ['A_BR', 'B_BR', 'C_BR'] }
             ];
 
             draftOrder.forEach(draft => {
-                let pick1Zone = Math.random() > 0.5 ? draft.zoneA : draft.zoneB;
-                let pick2Zone = pick1Zone === draft.zoneA ? draft.zoneB : draft.zoneA;
+                // If only 12 players, only look at A and B zones
+                let activeZones = numTeams === 3 ? draft.zones : draft.zones.slice(0, 2);
+                
+                // Shuffle the active zones so A, B, or C don't heavily favor getting the 1st pick every round
+                activeZones = activeZones.sort(() => Math.random() - 0.5);
 
-                pool.sort((a, b) => sortPlayers(a, b, draft.role));
-                let pick1Player = pool.shift();
-                document.getElementById(pick1Zone).appendChild(document.getElementById(pick1Player.id));
-
-                pool.sort((a, b) => sortPlayers(a, b, draft.role));
-                let pick2Player = pool.shift();
-                document.getElementById(pick2Zone).appendChild(document.getElementById(pick2Player.id));
+                for(let i=0; i < numTeams; i++) {
+                    pool.sort((a, b) => sortPlayers(a, b, draft.role));
+                    let pickedPlayer = pool.shift();
+                    document.getElementById(activeZones[i]).appendChild(document.getElementById(pickedPlayer.id));
+                }
             });
 
             saveWeekData();
