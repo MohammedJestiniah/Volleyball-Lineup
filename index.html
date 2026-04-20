@@ -40,9 +40,9 @@
         /* --- REDESIGNED ELO SCOREBOARD --- */
         .scoreboard-container {
             background: #000; border-bottom: 4px solid #333; padding: 10px;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 5; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-            flex-shrink: 0;
+            flex-shrink: 0; gap: 6px;
         }
 
         .scoreboard {
@@ -102,9 +102,6 @@
 
         .court-wrapper { padding: 6px 10px; display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; }
         
-        /* Adjusted heights! A/B has 3 rows, C has 2 rows. 
-           Giving A/B a flex-grow of 3 and C a flex-grow of 2 makes the boxes identical sizes. 
-        */
         .court-1-2 { flex-grow: 3; min-height: 120px; } 
         .court-3 { justify-content: center; padding-top: 0; flex-grow: 2; min-height: 80px; }
         
@@ -118,15 +115,13 @@
         
         #side_C { 
             background-color: #196f3d; 
-            width: 100%; /* Fully expands across screen width */
+            width: 100%; 
             grid-template-columns: repeat(3, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
         } 
         
-        /* Original Vertical Net */
         .net { width: 6px; height: auto; background-color: white; border-radius: 3px; margin: 0 4px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
 
-        /* New Horizontal Net */
         .horizontal-net {
             height: 6px; background-color: white; border-radius: 3px; 
             margin: 2px 14px; flex-shrink: 0; box-shadow: 0 0 5px rgba(255,255,255,0.5);
@@ -167,14 +162,15 @@
             transition: background-color 0.2s, color 0.2s, border 0.2s;
         }
         .player-name { font-weight: bold; pointer-events: none; }
-        .player-rating { font-size: 10px; font-weight: bold; color: #f1c40f; pointer-events: none; margin-top: 2px; }
+        
+        /* Hides the rating visually on the player token, but keeps it in the DOM for JS */
+        .player-rating { display: none !important; }
 
         .bench-slots .player { 
             position: relative; width: 90px; height: 100%; border-radius: 6px; 
             background-color: #f1c40f; color: #2c3e50; border: 2px solid #fff;
         }
         .bench-slots .player .player-name { font-size: 14px; }
-        .bench-slots .player .player-rating { color: #2c3e50; }
 
         .zone .player { 
             position: absolute; top: 2px; left: 2px; 
@@ -284,6 +280,7 @@
                         <div class="score-display" id="scoreC" onclick="editScore('scoreC')">0</div>
                     </div>
                 </div>
+                <div id="currentDate" style="font-size: 11px; font-weight: bold; font-family: sans-serif; color: #7f8c8d; text-transform: uppercase; margin-top: 2px; letter-spacing: 1px;"></div>
             </div>
 
             <div class="court-wrapper court-1-2">
@@ -424,6 +421,13 @@
         let editingPlayerId = null;
 
         window.onload = function() {
+            // Load Current Date into the Scoreboard Container
+            const dateOpts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            const dateEl = document.getElementById('currentDate');
+            if(dateEl) {
+                dateEl.innerText = new Date().toLocaleDateString(undefined, dateOpts).toUpperCase();
+            }
+
             const weekSelector = document.getElementById('weekSelector');
             for(let i = 1; i <= 50; i++) {
                 let opt = document.createElement('option');
